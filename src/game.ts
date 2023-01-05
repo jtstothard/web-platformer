@@ -7,13 +7,37 @@ type Coordinates = {
 };
 
 export class Game {
+  private maxWidth: number;
+  private maxHeight: number;
   private ctx: CanvasRenderingContext2D;
   private player: Sprite;
+  private surfaces: Sprite[] = [];
 
   constructor(canvas: HTMLCanvasElement) {
+    const dimensions = canvas.getBoundingClientRect();
+    this.maxWidth = dimensions.width;
+    this.maxHeight = dimensions.height;
     this.ctx = canvas.getContext('2d')!;
     // create player sprite in the middle of the screen
-    this.player = new Sprite(400, 300, 50, 50, 'red', 1, 1);
+    this.player = new Sprite(
+      this.maxWidth / 2,
+      this.maxHeight / 2,
+      50,
+      50,
+      'red',
+      0.5,
+      1
+    );
+
+    // create ground sprite
+    const ground = new Sprite(
+      0,
+      this.maxHeight - 50,
+      this.maxWidth,
+      50,
+      'green'
+    );
+    this.surfaces.push(ground);
   }
 
   public drawSprite(sprite: Sprite) {
@@ -24,6 +48,7 @@ export class Game {
   public draw() {
     this.ctx.clearRect(0, 0, 800, 600);
     this.drawSprite(this.player);
+    this.surfaces.forEach((surface) => this.drawSprite(surface));
   }
 
   public start() {
@@ -75,15 +100,25 @@ export class Game {
     this.player.move();
   }
 
-  // check if sprite is on the ground
-  public isOnGround(sprite: Sprite) {
-    return sprite.y + sprite.height >= 600;
+  // Check if sprite is touching a surface
+  public isTouching(sprite: Sprite, surface: Sprite) {
+    return (
+      sprite.x <= surface.x + surface.width &&
+      sprite.x + sprite.width >= surface.x &&
+      sprite.y <= surface.y + surface.height &&
+      sprite.y + sprite.height >= surface.y
+    );
   }
 
   public update() {
     this.move();
     this.draw();
-    this.player.isTouchingSurface = this.isOnGround(this.player);
+
+    // check if player is touching a surface
+    this.player.surfacesTouched = this.surfaces.filter((surface) =>
+      this.isTouching(this.player, surface)
+    );
+
     requestAnimationFrame(() => this.update());
   }
 }
@@ -97,7 +132,7 @@ class Sprite {
   public velocity: Coordinates = { x: 0, y: 0 };
   public dex: number;
   public weight: number;
-  public isTouchingSurface: boolean = false;
+  public surfacesTouched: Sprite[] = [];
 
   constructor(
     x: number,
@@ -121,8 +156,8 @@ class Sprite {
     switch (direction) {
       case 'up':
         // only jump if sprite is on a surface
-        if (this.isTouchingSurface) {
-          this.acceleration.y = -this.dex;
+        if (this.surfacesTouched.length > 0) {
+          this.acceleration.y = -this.dex * 2;
         }
         break;
       case 'left':
@@ -169,15 +204,19 @@ class Sprite {
     // calculate friction and air resistance
     const friction = 0.9;
     const airResistance = 0.99;
-    if (this.isTouchingSurface) {
+    if (this.surfacesTouched.length > 0) {
       this.velocity.x *= friction;
     }
     this.velocity.x *= airResistance;
 
     // check if sprite is on the ground
-    if (this.y + this.height >= 600) {
-      this.y = 600 - this.height;
-      this.velocity.y = 0;
+    if (this.velocity.y > 0 && this.surfacesTouched.length > 0) {
+      this.surfacesTouched.forEach((surface) => {
+        if (this.y + this.height >= surface.y) {
+          this.y = surface.y - this.height;
+          this.velocity.y = 0;
+        }
+      });
     }
 
     // check if sprite is on the left wall
