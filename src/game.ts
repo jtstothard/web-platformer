@@ -1,4 +1,6 @@
 const directions = ['up', 'down', 'left', 'right', 'stop'] as const;
+const surfaceValues = ['top', 'bottom', 'left', 'right'] as const;
+type SurfaceType = typeof surfaceValues[number];
 
 type DirectionType = typeof directions[number];
 type Coordinates = {
@@ -109,14 +111,37 @@ export class Game {
     this.player.move();
   }
 
-  // Check if sprite is touching a surface
+  // Check if sprite is touching a surface and return the sides that are touching
   public isTouching(sprite: Sprite, surface: Sprite) {
-    return (
-      sprite.x <= surface.x + surface.width &&
-      sprite.x + sprite.width >= surface.x &&
-      sprite.y <= surface.y + surface.height &&
-      sprite.y + sprite.height >= surface.y
-    );
+    const spriteLeft = sprite.x;
+    const spriteRight = sprite.x + sprite.width;
+    const spriteTop = sprite.y;
+    const spriteBottom = sprite.y + sprite.height;
+
+    const surfaceLeft = surface.x;
+    const surfaceRight = surface.x + surface.width;
+    const surfaceTop = surface.y;
+    const surfaceBottom = surface.y + surface.height;
+
+    const touching: SurfaceType[] = [];
+
+    if (spriteLeft <= surfaceRight && spriteRight >= surfaceLeft) {
+      if (spriteTop <= surfaceBottom && spriteBottom >= surfaceTop) {
+        if (spriteBottom >= surfaceTop) {
+          touching.push('top');
+        }
+        if (spriteTop <= surfaceBottom) {
+          touching.push('bottom');
+        }
+        if (spriteRight >= surfaceLeft) {
+          touching.push('left');
+        }
+        if (spriteLeft <= surfaceRight) {
+          touching.push('right');
+        }
+      }
+    }
+    return touching;
   }
 
   public update() {
@@ -124,9 +149,13 @@ export class Game {
     this.draw();
 
     // check if player is touching a surface
-    this.player.surfacesTouched = this.surfaces.filter((surface) =>
-      this.isTouching(this.player, surface)
-    );
+    this.player.surfacesTouched = this.surfaces.reduce((acc, surface) => {
+      const touching = this.isTouching(this.player, surface);
+      if (touching.length > 0) {
+        acc.push({ sprite: surface, surfaces: touching });
+      }
+      return acc;
+    }, [] as { sprite: Sprite; surfaces: SurfaceType[] }[]);
 
     requestAnimationFrame(() => this.update());
   }
@@ -141,7 +170,7 @@ class Sprite {
   public velocity: Coordinates = { x: 0, y: 0 };
   public dex: number;
   public weight: number;
-  public surfacesTouched: Sprite[] = [];
+  public surfacesTouched: { sprite: Sprite; surfaces: SurfaceType[] }[] = [];
 
   constructor(
     x: number,
@@ -161,11 +190,21 @@ class Sprite {
     this.weight = weight;
   }
 
+  public checkIfTouchingFloor() {
+    return (
+      this.surfacesTouched.filter(({ surfaces }) => {
+        return surfaces.includes('bottom');
+      }).length > 0
+    );
+  }
+
+  public isTouchingFloor = false;
+
   public update(direction: DirectionType) {
     switch (direction) {
       case 'up':
         // only jump if sprite is on a surface
-        if (this.surfacesTouched.length > 0) {
+        if (this.isTouchingFloor) {
           this.acceleration.y = -this.dex * 20;
         }
         break;
@@ -184,6 +223,8 @@ class Sprite {
   }
 
   public move() {
+    this.isTouchingFloor = this.checkIfTouchingFloor();
+
     const maxVelocity = this.dex * 10;
 
     // apply velocity
@@ -210,23 +251,20 @@ class Sprite {
     // calculate friction and air resistance
     const friction = 0.7;
     const airResistance = 0.99;
-    if (this.surfacesTouched.length > 0) {
+    if (this.isTouchingFloor) {
       this.velocity.x *= friction;
     }
     this.velocity.x *= airResistance;
 
     // check if sprite is on the ground
-    if (this.velocity.y > 0 && this.surfacesTouched.length > 0) {
-      //   console.log(this.velocity.y);
-      // find the surface that is closest to the sprites feet and set the sprites y position to the surface
-      if (this.surfacesTouched.length > 1) {
-        this.surfacesTouched.sort((a, b) => {
-          const aDistance = a.y - a.height - this.y;
-          const bDistance = b.y - b.height - this.y;
-          return bDistance - aDistance;
-        });
-      }
-      this.y = this.surfacesTouched[0].y - this.height;
+    if (this.velocity.y > 0 && this.isTouchingFloor) {
+      // get the surface that the sprite is touching floor
+      const surface = this.surfacesTouched.filter(({ surfaces }) => {
+        return surfaces.includes('bottom');
+      })[0].sprite;
+
+      // set sprite to the surface
+      this.y = surface.y - this.height;
       this.velocity.y = 0;
     }
 
