@@ -38,14 +38,15 @@ export class Game {
       'green'
     );
 
-    // create platforms
-    const platform1 = new Sprite(100, 300, 100, 50, 'blue');
-    const platform2 = new Sprite(400, 300, 100, 50, 'blue');
+    // create platform stairs sprite
+    const platforms = [];
+    for (let i = 0; i < 10; i++) {
+      platforms.push(
+        new Sprite(100 + i * 50, this.maxHeight - 100 - i * 50, 50, 50, 'blue')
+      );
+    }
 
-    // add platforms to surfaces array
-    this.surfaces.push(platform1);
-    this.surfaces.push(platform2);
-    this.surfaces.push(ground);
+    this.surfaces = [ground, ...platforms];
   }
 
   public drawSprite(sprite: Sprite) {
@@ -165,7 +166,7 @@ class Sprite {
       case 'up':
         // only jump if sprite is on a surface
         if (this.surfacesTouched.length > 0) {
-          this.acceleration.y = -this.dex * 2;
+          this.acceleration.y = -this.dex * 20;
         }
         break;
       case 'left':
@@ -206,9 +207,6 @@ class Sprite {
     this.x += this.velocity.x;
     this.y += this.velocity.y;
 
-    // apply gravity
-    this.acceleration.y += 0.05;
-
     // calculate friction and air resistance
     const friction = 0.7;
     const airResistance = 0.99;
@@ -219,12 +217,22 @@ class Sprite {
 
     // check if sprite is on the ground
     if (this.velocity.y > 0 && this.surfacesTouched.length > 0) {
-      this.surfacesTouched.forEach((surface) => {
-        if (this.y + this.height >= surface.y) {
-          this.y = surface.y - this.height;
-          this.velocity.y = 0;
-        }
-      });
+      //   console.log(this.velocity.y);
+      // find the surface that is closest to the sprites feet and set the sprites y position to the surface
+      if (this.surfacesTouched.length > 1) {
+        this.surfacesTouched.sort((a, b) => {
+          const aDistance = a.y - a.height - this.y;
+          const bDistance = b.y - b.height - this.y;
+          return bDistance - aDistance;
+        });
+      }
+      this.y = this.surfacesTouched[0].y - this.height;
+      this.velocity.y = 0;
+    }
+
+    // apply gravity
+    if (!this.surfacesTouched.length) {
+      this.acceleration.y = this.weight * 0.5;
     }
 
     // check if sprite is on the left wall
