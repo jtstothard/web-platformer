@@ -140,7 +140,7 @@ class Sprite {
   }
 
   public move() {
-    const maxVelocity = this.dex * 20;
+    const maxVelocity = this.dex * 10;
 
     // apply velocity
     this.velocity.x += this.acceleration.x;
@@ -166,9 +166,13 @@ class Sprite {
     // apply gravity
     this.acceleration.y += 0.1;
 
-    // calculate friction
+    // calculate friction and air resistance
     const friction = 0.9;
-    this.velocity.x *= friction;
+    const airResistance = 0.99;
+    if (this.isTouchingSurface) {
+      this.velocity.x *= friction;
+    }
+    this.velocity.x *= airResistance;
 
     // check if sprite is on the ground
     if (this.y + this.height >= 600) {
