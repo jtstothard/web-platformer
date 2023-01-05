@@ -37,6 +37,14 @@ export class Game {
       50,
       'green'
     );
+
+    // create platforms
+    const platform1 = new Sprite(100, 300, 100, 50, 'blue');
+    const platform2 = new Sprite(400, 300, 100, 50, 'blue');
+
+    // add platforms to surfaces array
+    this.surfaces.push(platform1);
+    this.surfaces.push(platform2);
     this.surfaces.push(ground);
   }
 
@@ -161,10 +169,10 @@ class Sprite {
         }
         break;
       case 'left':
-        this.acceleration.x = -this.dex;
+        this.acceleration.x = -this.dex * 2;
         break;
       case 'right':
-        this.acceleration.x = this.dex;
+        this.acceleration.x = this.dex * 2;
         break;
       case 'stop':
         this.acceleration.x = 0;
@@ -189,7 +197,7 @@ class Sprite {
       this.velocity.x = -maxVelocity;
     }
     if (this.velocity.y > 5) {
-      this.velocity.y = this.weight * 20;
+      this.velocity.y = this.weight * 10;
     }
     if (this.velocity.y < -5) {
       this.velocity.y = -5;
@@ -199,10 +207,10 @@ class Sprite {
     this.y += this.velocity.y;
 
     // apply gravity
-    this.acceleration.y += 0.1;
+    this.acceleration.y += 0.05;
 
     // calculate friction and air resistance
-    const friction = 0.9;
+    const friction = 0.7;
     const airResistance = 0.99;
     if (this.surfacesTouched.length > 0) {
       this.velocity.x *= friction;
