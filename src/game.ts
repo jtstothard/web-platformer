@@ -53,7 +53,12 @@ export class Game {
 
   public drawSprite(sprite: Sprite) {
     this.ctx.fillStyle = sprite.color;
-    this.ctx.fillRect(sprite.x, sprite.y, sprite.width, sprite.height);
+    this.ctx.fillRect(
+      sprite.coordinates.x,
+      sprite.coordinates.y,
+      sprite.width,
+      sprite.height
+    );
   }
 
   public draw() {
@@ -111,58 +116,98 @@ export class Game {
     this.player.move();
   }
 
-  // Check if sprite is touching a surface and return the sides that are touching
-  public isTouching(sprite: Sprite, surface: Sprite) {
-    const spriteLeft = sprite.x;
-    const spriteRight = sprite.x + sprite.width;
-    const spriteTop = sprite.y;
-    const spriteBottom = sprite.y + sprite.height;
-
-    const surfaceLeft = surface.x;
-    const surfaceRight = surface.x + surface.width;
-    const surfaceTop = surface.y;
-    const surfaceBottom = surface.y + surface.height;
-
-    const touching: SurfaceType[] = [];
-
-    if (spriteLeft <= surfaceRight && spriteRight >= surfaceLeft) {
-      if (spriteTop <= surfaceBottom && spriteBottom >= surfaceTop) {
-        if (spriteBottom >= surfaceTop) {
-          touching.push('top');
-        }
-        if (spriteTop <= surfaceBottom) {
-          touching.push('bottom');
-        }
-        if (spriteRight >= surfaceLeft) {
-          touching.push('left');
-        }
-        if (spriteLeft <= surfaceRight) {
-          touching.push('right');
-        }
-      }
+  // find the surface that the player is touching
+  public whichSurfaceTouchingWith(a: Sprite, b: Sprite) {
+    if (
+      a.coordinates.x < b.coordinates.x + b.width &&
+      a.coordinates.x + a.width > b.coordinates.x
+    ) {
+      if (a.coordinates.y === b.coordinates.y + b.height) return 'bottom';
+      if (a.coordinates.y + a.height === b.coordinates.y) return 'top';
     }
-    return touching;
+
+    if (
+      a.coordinates.y < b.coordinates.y + b.height &&
+      a.coordinates.y + a.height > b.coordinates.y
+    ) {
+      if (a.coordinates.x === b.coordinates.x + b.width) return 'right';
+      if (a.coordinates.x + a.width === b.coordinates.x) return 'left';
+    }
+
+    return null;
+  }
+
+  public whichSurfaceCollidingWith(a: Sprite, b: Sprite) {
+    const isColliding =
+      a.coordinates.x < b.coordinates.x + b.width &&
+      a.coordinates.x + a.width > b.coordinates.x &&
+      a.coordinates.y < b.coordinates.y + b.height &&
+      a.coordinates.y + a.height > b.coordinates.y;
+
+    if (isColliding) {
+      let timeToCollisionList: { surface: SurfaceType; time: number }[] = [];
+      // Assuming a is the player and b is the surface
+      // based on the player's previous coordinates and the velocity, we can determine which side of the player is touching the surface
+      if (a.velocity.x >= 0) {
+        // player is moving right
+        const timeToCollision =
+          (b.coordinates.x - a.previousCoordinates.x - a.width) / a.velocity.x;
+        timeToCollisionList.push({ surface: 'left', time: timeToCollision });
+      } else if (a.velocity.x <= 0) {
+        // player is moving left
+        const timeToCollision =
+          (b.coordinates.x + b.width - a.previousCoordinates.x) / a.velocity.x;
+        timeToCollisionList.push({ surface: 'right', time: timeToCollision });
+      }
+
+      if (a.velocity.y >= 0) {
+        // player is moving down
+        const timeToCollision =
+          (b.coordinates.y - a.previousCoordinates.y - a.height) /
+            a.velocity.y || 0;
+        timeToCollisionList.push({ surface: 'top', time: timeToCollision });
+      } else if (a.velocity.y <= 0) {
+        // player is moving up
+        const timeToCollision =
+          (b.coordinates.y + b.height - a.previousCoordinates.y) / a.velocity.y;
+        timeToCollisionList.push({ surface: 'bottom', time: timeToCollision });
+      }
+
+      // return the surface with the smallest time to collision (only positive values)
+      const res = timeToCollisionList
+        .filter((t) => t.time >= 0)
+        .sort((a, b) => a.time - b.time)[0];
+      return res?.surface || null;
+    }
+    return null;
   }
 
   public update() {
+    requestAnimationFrame(() => this.update());
     this.move();
     this.draw();
 
     // check if player is touching a surface
     this.player.surfacesTouched = this.surfaces.reduce((acc, surface) => {
-      const touching = this.isTouching(this.player, surface);
-      if (touching.length > 0) {
-        acc.push({ sprite: surface, surfaces: touching });
+      const colliding = this.whichSurfaceTouchingWith(this.player, surface);
+      if (colliding) {
+        acc.push({ sprite: surface, surface: colliding });
       }
       return acc;
-    }, [] as { sprite: Sprite; surfaces: SurfaceType[] }[]);
-
-    requestAnimationFrame(() => this.update());
+    }, [] as { sprite: Sprite; surface: SurfaceType }[]);
+    // check if player is colliding with a surface
+    this.player.surfacesCollided = this.surfaces.reduce((acc, surface) => {
+      const colliding = this.whichSurfaceCollidingWith(this.player, surface);
+      if (colliding) {
+        acc.push({ sprite: surface, surface: colliding });
+      }
+      return acc;
+    }, [] as { sprite: Sprite; surface: SurfaceType }[]);
   }
 }
 class Sprite {
-  public x: number;
-  public y: number;
+  public coordinates: Coordinates = { x: 0, y: 0 };
+  public previousCoordinates: Coordinates = { x: 0, y: 0 };
   public width: number;
   public height: number;
   public color: string;
@@ -170,7 +215,8 @@ class Sprite {
   public velocity: Coordinates = { x: 0, y: 0 };
   public dex: number;
   public weight: number;
-  public surfacesTouched: { sprite: Sprite; surfaces: SurfaceType[] }[] = [];
+  public surfacesCollided: { sprite: Sprite; surface: SurfaceType }[] = [];
+  public surfacesTouched: { sprite: Sprite; surface: SurfaceType }[] = [];
 
   constructor(
     x: number,
@@ -181,8 +227,8 @@ class Sprite {
     dex = 0,
     weight = 0
   ) {
-    this.x = x;
-    this.y = y;
+    this.coordinates.x = x;
+    this.coordinates.y = y;
     this.width = width;
     this.height = height;
     this.color = color;
@@ -192,8 +238,11 @@ class Sprite {
 
   public checkIfTouchingFloor() {
     return (
-      this.surfacesTouched.filter(({ surfaces }) => {
-        return surfaces.includes('bottom');
+      this.surfacesTouched.filter(({ surface }) => {
+        return surface === 'top';
+      }).length > 0 ||
+      this.surfacesCollided.filter(({ surface }) => {
+        return surface === 'top';
       }).length > 0
     );
   }
@@ -223,78 +272,122 @@ class Sprite {
   }
 
   public move() {
-    this.isTouchingFloor = this.checkIfTouchingFloor();
+    const updatedSprite: Sprite = JSON.parse(JSON.stringify(this));
+    updatedSprite.previousCoordinates = { ...updatedSprite.coordinates };
+
+    updatedSprite.isTouchingFloor = this.checkIfTouchingFloor();
 
     const maxVelocity = this.dex * 10;
 
     // apply velocity
-    this.velocity.x += this.acceleration.x;
-    this.velocity.y += this.acceleration.y;
+    updatedSprite.velocity.x += updatedSprite.acceleration.x;
+    updatedSprite.velocity.y += updatedSprite.acceleration.y;
 
     // max velocity
-    if (this.velocity.x > maxVelocity) {
-      this.velocity.x = maxVelocity;
+    if (updatedSprite.velocity.x > maxVelocity) {
+      updatedSprite.velocity.x = maxVelocity;
     }
-    if (this.velocity.x < -maxVelocity) {
-      this.velocity.x = -maxVelocity;
+    if (updatedSprite.velocity.x < -maxVelocity) {
+      updatedSprite.velocity.x = -maxVelocity;
     }
-    if (this.velocity.y > 5) {
-      this.velocity.y = this.weight * 10;
+    if (updatedSprite.velocity.y > 5) {
+      updatedSprite.velocity.y = updatedSprite.weight * 10;
     }
-    if (this.velocity.y < -5) {
-      this.velocity.y = -5;
+    if (updatedSprite.velocity.y < -5) {
+      updatedSprite.velocity.y = -5;
     }
-
-    this.x += this.velocity.x;
-    this.y += this.velocity.y;
-
+    // apply velocity to coordinates if not touching a surface in that direction and deal with collisions
+    if (
+      !updatedSprite.surfacesTouched.some((s) => s.surface === 'left') &&
+      updatedSprite.velocity.x > 0
+    ) {
+      updatedSprite.coordinates.x += updatedSprite.velocity.x;
+    }
+    if (
+      !updatedSprite.surfacesTouched.some((s) => s.surface === 'top') &&
+      updatedSprite.velocity.y > 0
+    ) {
+      updatedSprite.coordinates.y += updatedSprite.velocity.y;
+    }
+    if (
+      !updatedSprite.surfacesTouched.some((s) => s.surface === 'right') &&
+      updatedSprite.velocity.x < 0
+    ) {
+      updatedSprite.coordinates.x += updatedSprite.velocity.x;
+    }
+    if (
+      !updatedSprite.surfacesTouched.some((s) => s.surface === 'bottom') &&
+      updatedSprite.velocity.y < 0
+    ) {
+      updatedSprite.coordinates.y += updatedSprite.velocity.y;
+    }
     // calculate friction and air resistance
     const friction = 0.7;
     const airResistance = 0.99;
-    if (this.isTouchingFloor) {
-      this.velocity.x *= friction;
+    if (updatedSprite.isTouchingFloor) {
+      updatedSprite.velocity.x *= friction;
     }
-    this.velocity.x *= airResistance;
+    updatedSprite.velocity.x *= airResistance;
 
-    // check if sprite is on the ground
-    if (this.velocity.y > 0 && this.isTouchingFloor) {
-      // get the surface that the sprite is touching floor
-      const surface = this.surfacesTouched.filter(({ surfaces }) => {
-        return surfaces.includes('bottom');
-      })[0].sprite;
-
-      // set sprite to the surface
-      this.y = surface.y - this.height;
-      this.velocity.y = 0;
-    }
-
+    const gravity = updatedSprite.weight * 0.5;
     // apply gravity
-    if (!this.surfacesTouched.length) {
-      this.acceleration.y = this.weight * 0.5;
+    if (!updatedSprite.surfacesTouched.length) {
+      updatedSprite.acceleration.y = gravity;
     }
+
+    // handle collisions and translations
+    updatedSprite.surfacesCollided.forEach(({ sprite, surface }) => {
+      switch (surface) {
+        case 'top':
+          updatedSprite.previousCoordinates.y =
+            sprite.coordinates.y - updatedSprite.height;
+          updatedSprite.coordinates.y =
+            sprite.coordinates.y - updatedSprite.height;
+          updatedSprite.velocity.y = 0;
+          break;
+        case 'bottom':
+          updatedSprite.coordinates.y = sprite.coordinates.y + sprite.height;
+          updatedSprite.velocity.y = 0;
+          break;
+        case 'left':
+          updatedSprite.coordinates.x =
+            sprite.coordinates.x - updatedSprite.width;
+          updatedSprite.velocity.x = 0;
+          break;
+        case 'right':
+          updatedSprite.coordinates.x = sprite.coordinates.x + sprite.width;
+          updatedSprite.velocity.x = 0;
+          break;
+        default:
+          break;
+      }
+    });
 
     // check if sprite is on the left wall
-    if (this.x <= 0) {
-      this.x = 0;
-      this.velocity.x = 0;
+    if (updatedSprite.coordinates.x <= 0) {
+      updatedSprite.coordinates.x = 0;
+      updatedSprite.velocity.x = 0;
     }
 
     // check if sprite is on the right wall
-    if (this.x + this.width >= 800) {
-      this.x = 800 - this.width;
-      this.velocity.x = 0;
+    if (updatedSprite.coordinates.x + updatedSprite.width >= 800) {
+      updatedSprite.coordinates.x = 800 - updatedSprite.width;
+      updatedSprite.velocity.x = 0;
     }
 
     // check if sprite is on the top wall
-    if (this.y <= 0) {
-      this.y = 0;
-      this.velocity.y = 0;
+    if (updatedSprite.coordinates.y <= 0) {
+      updatedSprite.coordinates.y = 0;
+      updatedSprite.velocity.y = 0;
     }
 
     // check if sprite is on the bottom wall
-    if (this.y + this.height >= 600) {
-      this.y = 600 - this.height;
-      this.velocity.y = 0;
+    if (updatedSprite.coordinates.y + updatedSprite.height >= 600) {
+      updatedSprite.coordinates.y = 600 - updatedSprite.height;
+      updatedSprite.velocity.y = 0;
     }
+
+    //update sprite
+    Object.assign(this, updatedSprite);
   }
 }
