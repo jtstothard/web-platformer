@@ -114,7 +114,10 @@ class Sprite {
   public update(direction: DirectionType) {
     switch (direction) {
       case 'up':
-        this.acceleration.y = -this.dex;
+        // only jump if sprite is on the ground
+        if (this.y + this.height >= 600) {
+          this.acceleration.y = -this.dex;
+        }
         break;
       case 'left':
         this.acceleration.x = -this.dex;
