@@ -1,3 +1,11 @@
+const directions = ['up', 'down', 'left', 'right', 'stop'] as const;
+
+type DirectionType = typeof directions[number];
+type Coordinates = {
+  x: number;
+  y: number;
+};
+
 export class Game {
   private ctx: CanvasRenderingContext2D;
   private player: Sprite;
@@ -67,21 +75,18 @@ export class Game {
     this.player.move();
   }
 
+  // check if sprite is on the ground
+  public isOnGround(sprite: Sprite) {
+    return sprite.y + sprite.height >= 600;
+  }
+
   public update() {
     this.move();
     this.draw();
+    this.player.isTouchingSurface = this.isOnGround(this.player);
     requestAnimationFrame(() => this.update());
   }
 }
-
-type Coordinates = {
-  x: number;
-  y: number;
-};
-
-const directions = ['up', 'down', 'left', 'right', 'stop'] as const;
-type DirectionType = typeof directions[number];
-
 class Sprite {
   public x: number;
   public y: number;
@@ -92,6 +97,7 @@ class Sprite {
   public velocity: Coordinates = { x: 0, y: 0 };
   public dex: number;
   public weight: number;
+  public isTouchingSurface: boolean = false;
 
   constructor(
     x: number,
@@ -114,8 +120,8 @@ class Sprite {
   public update(direction: DirectionType) {
     switch (direction) {
       case 'up':
-        // only jump if sprite is on the ground
-        if (this.y + this.height >= 600) {
+        // only jump if sprite is on a surface
+        if (this.isTouchingSurface) {
           this.acceleration.y = -this.dex;
         }
         break;
