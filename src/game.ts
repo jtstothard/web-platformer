@@ -1,10 +1,11 @@
 export class Game {
   private ctx: CanvasRenderingContext2D;
-  private player: Player;
+  private player: Sprite;
 
   constructor(canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext('2d')!;
-    this.player = new Player(0, 0, 100, 100, 'red');
+    // create player sprite in the middle of the screen
+    this.player = new Sprite(400, 300, 50, 50, 'red', 1, 1);
   }
 
   public drawSprite(sprite: Sprite) {
@@ -20,12 +21,16 @@ export class Game {
   public start() {
     this.addEventListener();
     this.draw();
+    requestAnimationFrame(() => this.update());
   }
 
   // add event listener to the window
   public addEventListener() {
     window.addEventListener('keydown', (event) => {
       this.handleKeyDown(event);
+    });
+    window.addEventListener('keyup', (event) => {
+      this.handleKeyUp(event);
     });
   }
 
@@ -45,9 +50,37 @@ export class Game {
         this.player.update('right');
         break;
     }
+  }
+
+  // handle key up event
+  private handleKeyUp(event: KeyboardEvent) {
+    switch (event.key) {
+      case 'ArrowLeft':
+      case 'ArrowRight':
+        this.player.update('stop');
+        break;
+    }
+  }
+
+  // add continuous movement
+  public move() {
+    this.player.move();
+  }
+
+  public update() {
+    this.move();
     this.draw();
+    requestAnimationFrame(() => this.update());
   }
 }
+
+type Coordinates = {
+  x: number;
+  y: number;
+};
+
+const directions = ['up', 'down', 'left', 'right', 'stop'] as const;
+type DirectionType = typeof directions[number];
 
 class Sprite {
   public x: number;
@@ -55,50 +88,107 @@ class Sprite {
   public width: number;
   public height: number;
   public color: string;
+  public acceleration: Coordinates = { x: 0, y: 0 };
+  public velocity: Coordinates = { x: 0, y: 0 };
+  public dex: number;
+  public weight: number;
 
   constructor(
     x: number,
     y: number,
     width: number,
     height: number,
-    color: string
+    color: string,
+    dex = 0,
+    weight = 0
   ) {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
     this.color = color;
+    this.dex = dex;
+    this.weight = weight;
   }
-}
 
-class Player extends Sprite {
-  public update(direction: string) {
+  public update(direction: DirectionType) {
     switch (direction) {
       case 'up':
-        this.y -= 10;
-        break;
-      case 'down':
-        this.y += 10;
+        this.acceleration.y = -this.dex;
         break;
       case 'left':
-        this.x -= 10;
+        this.acceleration.x = -this.dex;
         break;
       case 'right':
-        this.x += 10;
+        this.acceleration.x = this.dex;
+        break;
+      case 'stop':
+        this.acceleration.x = 0;
+        break;
+      default:
         break;
     }
+  }
 
-    if (this.x > 800) {
+  public move() {
+    const maxVelocity = this.dex * 20;
+
+    // apply velocity
+    this.velocity.x += this.acceleration.x;
+    this.velocity.y += this.acceleration.y;
+
+    // max velocity
+    if (this.velocity.x > maxVelocity) {
+      this.velocity.x = maxVelocity;
+    }
+    if (this.velocity.x < -maxVelocity) {
+      this.velocity.x = -maxVelocity;
+    }
+    if (this.velocity.y > 5) {
+      this.velocity.y = this.weight * 20;
+    }
+    if (this.velocity.y < -5) {
+      this.velocity.y = -5;
+    }
+
+    this.x += this.velocity.x;
+    this.y += this.velocity.y;
+
+    // apply gravity
+    this.acceleration.y += 0.1;
+
+    // calculate friction
+    const friction = 0.9;
+    this.velocity.x *= friction;
+
+    // check if sprite is on the ground
+    if (this.y + this.height >= 600) {
+      this.y = 600 - this.height;
+      this.velocity.y = 0;
+    }
+
+    // check if sprite is on the left wall
+    if (this.x <= 0) {
       this.x = 0;
+      this.velocity.x = 0;
     }
-    if (this.y > 600) {
+
+    // check if sprite is on the right wall
+    if (this.x + this.width >= 800) {
+      this.x = 800 - this.width;
+      this.velocity.x = 0;
+    }
+
+    // check if sprite is on the top wall
+    if (this.y <= 0) {
       this.y = 0;
+      this.velocity.y = 0;
     }
-    if (this.x < 0) {
-      this.x = 800;
-    }
-    if (this.y < 0) {
-      this.y = 600;
+
+    // check if sprite is on the bottom wall
+    if (this.y + this.height >= 600) {
+      this.y = 600 - this.height;
+      this.velocity.y = 0;
     }
   }
 }
