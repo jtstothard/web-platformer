@@ -52,25 +52,37 @@ export class Sprite {
     }
   }
 
+  resetState(surfaces: { sprite: Sprite; surface: SurfaceType }[]) {
+    const isTouchingFloor = this.movement.isTouchingFloor;
+
+    const willBeTouchingFloor = surfaces.some(
+      ({ surface }) => surface === 'top'
+    );
+
+    if (!isTouchingFloor && willBeTouchingFloor) {
+      if (
+        this.movement.velocity.x === 0 ||
+        this.movement.acceleration.x === 0
+      ) {
+        this.state = 'idle';
+      } else {
+        this.state = 'run';
+      }
+    }
+  }
+
   public updateSurfacesCollided(
     surfaces: { sprite: Sprite; surface: SurfaceType }[]
   ) {
+    this.resetState(surfaces);
     this.movement.updateSurfacesCollided(surfaces);
   }
 
   public updateSurfacesTouched(
     surfaces: { sprite: Sprite; surface: SurfaceType }[]
   ) {
+    this.resetState(surfaces);
     this.movement.updateSurfacesTouched(surfaces);
-
-    // reset state when sprite is on a surface
-    if (surfaces.some(({ surface }) => surface === 'top')) {
-      if (this.movement.velocity.x === 0) {
-        this.state = 'idle';
-      } else {
-        this.state = 'run';
-      }
-    }
   }
 
   public update(direction: DirectionType) {
