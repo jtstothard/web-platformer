@@ -104,18 +104,18 @@ export class Sprite {
     this.previousState = this.state;
     this.movement.update(direction);
     if (direction === 'left') {
-      this.state = 'run';
+      if (this.movement.isTouchingFloor) this.state = 'run';
       this.direction = 'left';
     }
     if (direction === 'right') {
-      this.state = 'run';
+      if (this.movement.isTouchingFloor) this.state = 'run';
       this.direction = 'right';
     }
     if (direction === 'up') {
       this.state = 'jump';
     }
     if (direction === 'stop') {
-      this.state = 'idle';
+      if (this.movement.isTouchingFloor) this.state = 'idle';
     }
   }
 
