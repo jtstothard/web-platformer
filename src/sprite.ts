@@ -62,6 +62,15 @@ export class Sprite {
     surfaces: { sprite: Sprite; surface: SurfaceType }[]
   ) {
     this.movement.updateSurfacesTouched(surfaces);
+
+    // reset state when sprite is on a surface
+    if (surfaces.some(({ surface }) => surface === 'top')) {
+      if (this.movement.velocity.x === 0) {
+        this.state = 'idle';
+      } else {
+        this.state = 'run';
+      }
+    }
   }
 
   public update(direction: DirectionType) {
