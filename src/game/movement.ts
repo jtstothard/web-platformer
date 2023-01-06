@@ -80,7 +80,7 @@ export class Movement {
     this.isTouchingFloor = this.checkIfTouchingFloor();
 
     const maxVelocity = this.dex * 10;
-
+    const maxBounce = this.dex * 25 * this.weight;
     // apply velocity
     this.velocity.x += this.acceleration.x;
     this.velocity.y += this.acceleration.y;
@@ -92,11 +92,11 @@ export class Movement {
     if (this.velocity.x < -maxVelocity) {
       this.velocity.x = -maxVelocity;
     }
-    if (this.velocity.y > this.weight * 10) {
-      this.velocity.y = this.weight * 10;
+    if (this.velocity.y > maxBounce) {
+      this.velocity.y = maxBounce;
     }
-    if (this.velocity.y < -this.weight * 10) {
-      this.velocity.y = -this.weight * 10;
+    if (this.velocity.y < -maxBounce) {
+      this.velocity.y = -maxBounce;
     }
     // apply velocity to coordinates if not touching a surface in that direction and deal with collisions
     if (

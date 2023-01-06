@@ -34,15 +34,19 @@ export class Game {
     const jumpLoader = new ImageLoader('sprites/player/jump/');
     const backgroundLoader = new ImageLoader('background/', 'png');
 
+    const backgroundHeight = (await backgroundLoader.images)[0].height;
+
+    const canvasToBackgroundRatio = backgroundHeight / this.maxHeight;
+
     const sprites: { [key in StateType]: HTMLImageElement[] } = {
       idle: await idleLoader.images,
       run: await runLoader.images,
       jump: await jumpLoader.images,
     };
 
-    const height = 100;
-    const spritesWidth = sprites.idle[0].width;
     const spritesHeight = sprites.idle[0].height;
+    const height = spritesHeight / canvasToBackgroundRatio;
+    const spritesWidth = sprites.idle[0].width;
     const aspectRatio = (spritesWidth || 1) / (spritesHeight || 1);
     const width = height * aspectRatio;
 
@@ -73,15 +77,18 @@ export class Game {
     const blockImage = new Image();
     blockImage.src = blockTile;
 
-    // create staircase of blocks
+    const blockHeight = blockImage.height / canvasToBackgroundRatio;
+
+    // create platform
     for (let i = 1; i < 5; i++) {
       const block = new Tile(
-        100 + i * 100,
-        this.maxHeight - 100 - i * 50,
-        100,
-        50,
+        blockHeight * i,
+        this.maxHeight - 50 - blockHeight,
+        blockHeight,
+        blockHeight,
         blockImage
       );
+
       this.map.addTile(block);
     }
 
