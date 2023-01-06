@@ -25,6 +25,8 @@ export class Sprite {
   surfacesCollided: { sprite: Sprite; surface: SurfaceType }[] = [];
   surfacesTouched: { sprite: Sprite; surface: SurfaceType }[] = [];
   movement: Movement;
+  maxWidth = 0;
+  maxHeight = 0;
 
   constructor(
     x: number,
@@ -34,10 +36,23 @@ export class Sprite {
     color: string,
     dex = 0,
     weight = 0,
-    sprites?: { [key in StateType]: HTMLImageElement[] }
+    sprites?: { [key in StateType]: HTMLImageElement[] },
+    maxWidth = 0,
+    maxHeight = 0
   ) {
+    this.maxWidth = maxWidth;
+    this.maxHeight = maxHeight;
     this.color = color;
-    this.movement = new Movement(x, y, width, height, dex, weight);
+    this.movement = new Movement(
+      x,
+      y,
+      width,
+      height,
+      dex,
+      weight,
+      maxWidth,
+      maxHeight
+    );
 
     this.coordinates = this.movement.coordinates;
     this.previousCoordinates = this.movement.previousCoordinates;

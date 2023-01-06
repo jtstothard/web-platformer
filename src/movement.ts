@@ -14,6 +14,8 @@ export class Movement {
   surfacesCollided: { sprite: Sprite; surface: SurfaceType }[] = [];
   surfacesTouched: { sprite: Sprite; surface: SurfaceType }[] = [];
   isTouchingFloor = false;
+  maxWidth = 0;
+  maxHeight = 0;
 
   constructor(
     x: number,
@@ -21,7 +23,9 @@ export class Movement {
     width: number,
     height: number,
     dex = 0,
-    weight = 0
+    weight = 0,
+    maxWidth = 0,
+    maxHeight = 0
   ) {
     this.coordinates.x = x;
     this.coordinates.y = y;
@@ -29,6 +33,8 @@ export class Movement {
     this.height = height;
     this.dex = dex;
     this.weight = weight;
+    this.maxWidth = maxWidth;
+    this.maxHeight = maxHeight;
   }
 
   public updateSurfacesCollided(
@@ -164,8 +170,8 @@ export class Movement {
     }
 
     // check if sprite is on the right wall
-    if (this.coordinates.x + this.width >= 800) {
-      this.coordinates.x = 800 - this.width;
+    if (this.coordinates.x + this.width >= this.maxWidth) {
+      this.coordinates.x = this.maxWidth - this.width;
       this.velocity.x = 0;
     }
 
@@ -176,8 +182,8 @@ export class Movement {
     }
 
     // check if sprite is on the bottom wall
-    if (this.coordinates.y + this.height >= 600) {
-      this.coordinates.y = 600 - this.height;
+    if (this.coordinates.y + this.height >= this.maxHeight) {
+      this.coordinates.y = this.maxHeight - this.height;
       this.velocity.y = 0;
     }
   }

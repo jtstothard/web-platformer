@@ -15,7 +15,16 @@ export class Drawing {
     this.mapHeight = mapHeight;
   }
 
-  drawSprite(sprite: Sprite) {
+  getSpriteLocationOnCanvas(sprite: Sprite, camera: Coordinates) {
+    const { x, y } = camera;
+    const spriteX = sprite.coordinates.x - x;
+    const spriteY = sprite.coordinates.y - y;
+
+    return { x: spriteX, y: spriteY };
+  }
+
+  drawSprite(sprite: Sprite, camera: Coordinates) {
+    const { x, y } = this.getSpriteLocationOnCanvas(sprite, camera);
     const speed = 0.02;
     if (sprite.sprites) {
       const frames = sprite.sprites[sprite.state];
@@ -24,21 +33,18 @@ export class Drawing {
 
       // change direction if needed
       if (sprite.direction === 'left') {
-        this.ctx.translate(
-          sprite.coordinates.x + sprite.width,
-          sprite.coordinates.y
-        );
+        this.ctx.save();
         this.ctx.scale(-1, 1);
-        this.ctx.drawImage(image, 0, 0, sprite.width, sprite.height);
-        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-      } else {
         this.ctx.drawImage(
           image,
-          sprite.coordinates.x,
-          sprite.coordinates.y,
+          -x - sprite.width,
+          y,
           sprite.width,
           sprite.height
         );
+        this.ctx.restore();
+      } else {
+        this.ctx.drawImage(image, x, y, sprite.width, sprite.height);
       }
 
       return;
@@ -56,7 +62,12 @@ export class Drawing {
     this.frame += speed;
   }
 
-  drawBackground(background: HTMLImageElement, distance: number, x: number) {
+  drawBackground(
+    background: HTMLImageElement,
+    distance: number,
+    coordinates: Coordinates
+  ) {
+    const { x, y } = coordinates;
     const canvasHeight = this.canvas.height;
     const canvasWidth = this.canvas.width;
 
@@ -64,27 +75,55 @@ export class Drawing {
 
     // make background move based on how far away it is from the camera (distance) and the map width
     const x1 = (x * distance * parallaxEffect) % canvasWidth;
-
     // draw background and repeat it to fill the canvas
-    this.ctx.drawImage(background, x1, 0, canvasWidth, canvasHeight);
+    this.ctx.drawImage(background, x1, y, canvasWidth, canvasHeight);
     this.ctx.drawImage(
       background,
       x1 - canvasWidth,
-      0,
+      y,
       canvasWidth,
       canvasHeight
     );
   }
 
+  getCameraCoordinates(playerCoordinates: Coordinates) {
+    const { x, y } = playerCoordinates;
+    const canvasWidth = this.canvas.width;
+    const canvasHeight = this.canvas.height;
+
+    // Camera coordinates are the coordinates of the top left corner of the canvas
+    // so we need to subtract half the canvas width and height to get the coordinates
+    // of the top left corner of the canvas
+    // camera should not go outside the map
+
+    // if player is in the middle of the map, camera should be in the middle of the canvas
+    // if player is at the edge of the map, camera should be at the edge of the canvas
+
+    // if player is at the edge of the map, camera should not go outside the map
+    // if player is in the middle of the map, camera should be in the middle of the canvas
+
+    const cameraX = Math.max(
+      0,
+      Math.min(x - canvasWidth / 2, this.mapWidth - canvasWidth)
+    );
+    const cameraY = Math.max(
+      0,
+      Math.min(y - canvasHeight / 2, this.mapHeight - canvasHeight)
+    );
+
+    return { x: cameraX, y: cameraY };
+  }
+
   public draw(
     sprites: Sprite[],
     backgrounds: BackgroundType[],
-    coordinates: Coordinates
+    playerCoordinates: Coordinates
   ) {
+    const camera = this.getCameraCoordinates(playerCoordinates);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     backgrounds.forEach(({ element, distance }) =>
-      this.drawBackground(element, distance, coordinates.x)
+      this.drawBackground(element, distance, camera)
     );
-    sprites.forEach(this.drawSprite.bind(this));
+    sprites.forEach((sprite) => this.drawSprite(sprite, camera));
   }
 }

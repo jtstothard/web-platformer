@@ -47,14 +47,16 @@ export class Game {
     const width = height * aspectRatio;
 
     this.player = new Sprite(
-      this.maxWidth / 2,
+      this.drawing.canvas.width / 2,
       this.maxHeight / 2,
       width,
       height,
       'red',
       0.5,
       1,
-      sprites
+      sprites,
+      this.maxWidth,
+      this.maxHeight
     );
 
     // create ground sprite
