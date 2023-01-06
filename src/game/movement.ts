@@ -1,6 +1,7 @@
 import { DirectionType } from './controls';
 import { SurfaceType } from './';
-import { Coordinates, Sprite } from './sprite';
+import { Coordinates } from './sprite';
+import { Tile } from './tile';
 
 export class Movement {
   public coordinates: Coordinates = { x: 0, y: 0 };
@@ -11,8 +12,8 @@ export class Movement {
   public velocity: Coordinates = { x: 0, y: 0 };
   public dex: number;
   public weight: number;
-  surfacesCollided: { sprite: Sprite; surface: SurfaceType }[] = [];
-  surfacesTouched: { sprite: Sprite; surface: SurfaceType }[] = [];
+  surfacesCollided: { sprite: Tile; surface: SurfaceType }[] = [];
+  surfacesTouched: { sprite: Tile; surface: SurfaceType }[] = [];
   isTouchingFloor = false;
   maxWidth = 0;
   maxHeight = 0;
@@ -38,13 +39,13 @@ export class Movement {
   }
 
   public updateSurfacesCollided(
-    surfaces: { sprite: Sprite; surface: SurfaceType }[]
+    surfaces: { sprite: Tile; surface: SurfaceType }[]
   ) {
     this.surfacesCollided = surfaces;
   }
 
   public updateSurfacesTouched(
-    surfaces: { sprite: Sprite; surface: SurfaceType }[]
+    surfaces: { sprite: Tile; surface: SurfaceType }[]
   ) {
     this.surfacesTouched = surfaces;
   }

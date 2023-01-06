@@ -1,15 +1,15 @@
 export const surfaceValues = ['top', 'bottom', 'left', 'right'] as const;
 export type SurfaceType = typeof surfaceValues[number];
 
-// @ts-ignore
-import { GIF } from './utils/gif';
-
 import { Controls } from './controls';
 import { Drawing } from './draw';
 import { Sprite, StateType } from './sprite';
 import { Map } from './map';
 
 import { ImageLoader } from './ImageLoader';
+import { Tile } from './tile';
+
+import groundTile from '../assets/tiles/ground.png';
 
 export class Game {
   private player?: Sprite;
@@ -59,31 +59,22 @@ export class Game {
       this.maxHeight
     );
 
-    // create ground sprite
-    const ground = new Sprite(
+    const groundImage = new Image();
+    groundImage.src = groundTile;
+
+    // create ground tile
+    const ground = new Tile(
       0,
       this.maxHeight - 50,
       this.maxWidth,
       50,
-      'green'
+      groundImage
     );
-
-    // create platform stairs sprite
-    const platforms = [];
-    for (let i = 0; i < 10; i++) {
-      platforms.push(
-        new Sprite(100 + i * 50, this.maxHeight - 100 - i * 50, 50, 50, 'blue')
-      );
-    }
 
     new Controls(this.player.update.bind(this.player));
 
     this.map.addTile(ground);
     this.map.addSprite(this.player);
-
-    platforms.forEach((platform) => {
-      this.map.addTile(platform);
-    });
 
     (await backgroundLoader.images).forEach((image, i) => {
       this.map.addBackground(image, i);
@@ -93,7 +84,8 @@ export class Game {
   public start() {
     if (this.player)
       this.drawing.draw(
-        [...this.map.tiles, ...this.map.sprites],
+        this.map.sprites,
+        this.map.tiles,
         this.map.backgrounds,
         this.player.coordinates
       );
@@ -106,41 +98,45 @@ export class Game {
   }
 
   // find the surface that the player is touching
-  public whichSurfaceTouchingWith(a: Sprite, b: Sprite) {
+  public whichSurfaceTouchingWith(sprite: Sprite, tile: Tile) {
     if (
-      a.coordinates.x < b.coordinates.x + b.width &&
-      a.coordinates.x + a.width > b.coordinates.x
+      sprite.coordinates.x < tile.coordinates.x + tile.width &&
+      sprite.coordinates.x + sprite.width > tile.coordinates.x
     ) {
-      if (a.coordinates.y === b.coordinates.y + b.height) return 'bottom';
-      if (a.coordinates.y + a.height === b.coordinates.y) return 'top';
+      if (sprite.coordinates.y === tile.coordinates.y + tile.height)
+        return 'bottom';
+      if (sprite.coordinates.y + sprite.height === tile.coordinates.y)
+        return 'top';
     }
 
     if (
-      a.coordinates.y < b.coordinates.y + b.height &&
-      a.coordinates.y + a.height > b.coordinates.y
+      sprite.coordinates.y < tile.coordinates.y + tile.height &&
+      sprite.coordinates.y + sprite.height > tile.coordinates.y
     ) {
-      if (a.coordinates.x === b.coordinates.x + b.width) return 'right';
-      if (a.coordinates.x + a.width === b.coordinates.x) return 'left';
+      if (sprite.coordinates.x === tile.coordinates.x + tile.width)
+        return 'right';
+      if (sprite.coordinates.x + sprite.width === tile.coordinates.x)
+        return 'left';
     }
 
     return null;
   }
 
-  public whichSurfaceCollidingWith(a: Sprite, b: Sprite) {
-    const aTop = a.coordinates.y;
-    const aBottom = a.coordinates.y + a.height;
-    const aLeft = a.coordinates.x;
-    const aRight = a.coordinates.x + a.width;
+  public whichSurfaceCollidingWith(sprite: Sprite, tile: Tile) {
+    const aTop = sprite.coordinates.y;
+    const aBottom = sprite.coordinates.y + sprite.height;
+    const aLeft = sprite.coordinates.x;
+    const aRight = sprite.coordinates.x + sprite.width;
 
-    const a2Top = a.previousCoordinates.y;
-    const a2Bottom = a.previousCoordinates.y + a.height;
-    const a2Left = a.previousCoordinates.x;
-    const a2Right = a.previousCoordinates.x + a.width;
+    const a2Top = sprite.previousCoordinates.y;
+    const a2Bottom = sprite.previousCoordinates.y + sprite.height;
+    const a2Left = sprite.previousCoordinates.x;
+    const a2Right = sprite.previousCoordinates.x + sprite.width;
 
-    const bTop = b.coordinates.y;
-    const bBottom = b.coordinates.y + b.height;
-    const bLeft = b.coordinates.x;
-    const bRight = b.coordinates.x + b.width;
+    const bTop = tile.coordinates.y;
+    const bBottom = tile.coordinates.y + tile.height;
+    const bLeft = tile.coordinates.x;
+    const bRight = tile.coordinates.x + tile.width;
 
     const isColliding =
       aBottom > bTop && aTop < bBottom && aRight > bLeft && aLeft < bRight;
@@ -149,23 +145,23 @@ export class Game {
       let timeToCollisionList: { surface: SurfaceType; time: number }[] = [];
       // Assuming a is the player and b is the surface
       // based on the player's previous coordinates and the velocity, we can determine which side of the player is touching the surface
-      if (a.velocity.x >= 0) {
+      if (sprite.velocity.x >= 0) {
         // player is moving right
-        const timeToCollision = (bLeft - a2Right) / a.velocity.x || 0;
+        const timeToCollision = (bLeft - a2Right) / sprite.velocity.x || 0;
         timeToCollisionList.push({ surface: 'left', time: timeToCollision });
-      } else if (a.velocity.x <= 0) {
+      } else if (sprite.velocity.x <= 0) {
         // player is moving left
-        const timeToCollision = (a2Left - bRight) / a.velocity.x || 0;
+        const timeToCollision = (a2Left - bRight) / sprite.velocity.x || 0;
         timeToCollisionList.push({ surface: 'right', time: timeToCollision });
       }
 
-      if (a.velocity.y >= 0) {
+      if (sprite.velocity.y >= 0) {
         // player is moving down
-        const timeToCollision = (bTop - a2Bottom) / a.velocity.y || 0;
+        const timeToCollision = (bTop - a2Bottom) / sprite.velocity.y || 0;
         timeToCollisionList.push({ surface: 'top', time: timeToCollision });
-      } else if (a.velocity.y <= 0) {
+      } else if (sprite.velocity.y <= 0) {
         // player is moving up
-        const timeToCollision = (a2Top - bBottom) / a.velocity.y || 0;
+        const timeToCollision = (a2Top - bBottom) / sprite.velocity.y || 0;
         timeToCollisionList.push({ surface: 'bottom', time: timeToCollision });
       }
 
@@ -184,7 +180,8 @@ export class Game {
     if (this.player) {
       this.move();
       this.drawing.draw(
-        [...this.map.tiles, ...this.map.sprites],
+        this.map.sprites,
+        this.map.tiles,
         this.map.backgrounds,
         this.player.coordinates
       );
@@ -199,7 +196,7 @@ export class Game {
           acc.push({ sprite: surface, surface: colliding });
         }
         return acc;
-      }, [] as { sprite: Sprite; surface: SurfaceType }[]);
+      }, [] as { sprite: Tile; surface: SurfaceType }[]);
 
       this.player.updateSurfacesTouched(surfacesTouched);
 
@@ -213,7 +210,7 @@ export class Game {
           acc.push({ sprite: surface, surface: colliding });
         }
         return acc;
-      }, [] as { sprite: Sprite; surface: SurfaceType }[]);
+      }, [] as { sprite: Tile; surface: SurfaceType }[]);
 
       this.player.updateSurfacesCollided(surfacesCollided);
     }

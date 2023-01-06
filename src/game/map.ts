@@ -1,6 +1,5 @@
 import { Sprite } from './sprite';
-
-export type Tile = Sprite;
+import { Tile } from './tile';
 
 export type BackgroundType = {
   element: HTMLImageElement;

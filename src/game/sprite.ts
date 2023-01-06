@@ -1,6 +1,7 @@
-import { DirectionType } from './game/controls';
-import { SurfaceType } from './game';
+import { DirectionType } from './controls';
+import { SurfaceType } from './';
 import { Movement } from './movement';
+import { Tile } from './tile';
 
 export type Coordinates = {
   x: number;
@@ -22,8 +23,8 @@ export class Sprite {
   public state: StateType = 'idle';
   public direction: 'left' | 'right' = 'right';
   public sprites?: { [key in StateType]: HTMLImageElement[] };
-  surfacesCollided: { sprite: Sprite; surface: SurfaceType }[] = [];
-  surfacesTouched: { sprite: Sprite; surface: SurfaceType }[] = [];
+  surfacesCollided: { sprite: Tile; surface: SurfaceType }[] = [];
+  surfacesTouched: { sprite: Tile; surface: SurfaceType }[] = [];
   movement: Movement;
   maxWidth = 0;
   maxHeight = 0;
@@ -67,7 +68,7 @@ export class Sprite {
     }
   }
 
-  resetState(surfaces: { sprite: Sprite; surface: SurfaceType }[]) {
+  resetState(surfaces: { sprite: Tile; surface: SurfaceType }[]) {
     const isTouchingFloor = this.movement.isTouchingFloor;
 
     const willBeTouchingFloor = surfaces.some(
@@ -87,14 +88,14 @@ export class Sprite {
   }
 
   public updateSurfacesCollided(
-    surfaces: { sprite: Sprite; surface: SurfaceType }[]
+    surfaces: { sprite: Tile; surface: SurfaceType }[]
   ) {
     this.resetState(surfaces);
     this.movement.updateSurfacesCollided(surfaces);
   }
 
   public updateSurfacesTouched(
-    surfaces: { sprite: Sprite; surface: SurfaceType }[]
+    surfaces: { sprite: Tile; surface: SurfaceType }[]
   ) {
     this.resetState(surfaces);
     this.movement.updateSurfacesTouched(surfaces);

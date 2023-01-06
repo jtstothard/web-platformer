@@ -1,5 +1,6 @@
 import { BackgroundType } from './map';
 import { Coordinates, Sprite } from './sprite';
+import { Tile } from './tile';
 
 export class Drawing {
   canvas: HTMLCanvasElement;
@@ -15,17 +16,16 @@ export class Drawing {
     this.mapHeight = mapHeight;
   }
 
-  getSpriteLocationOnCanvas(sprite: Sprite, camera: Coordinates) {
-    const { x, y } = camera;
-    const spriteX = sprite.coordinates.x - x;
-    const spriteY = sprite.coordinates.y - y;
-
-    return { x: spriteX, y: spriteY };
+  getLocationOnCanvas(coordinates: Coordinates, camera: Coordinates) {
+    return {
+      x: coordinates.x - camera.x,
+      y: coordinates.y - camera.y,
+    };
   }
 
   drawSprite(sprite: Sprite, camera: Coordinates) {
-    const { x, y } = this.getSpriteLocationOnCanvas(sprite, camera);
-    const speed = 0.02;
+    const { x, y } = this.getLocationOnCanvas(sprite.coordinates, camera);
+    const speed = 0.2;
     if (sprite.sprites) {
       const frames = sprite.sprites[sprite.state];
       const frame = Math.floor(this.frame) % frames.length;
@@ -46,20 +46,45 @@ export class Drawing {
       } else {
         this.ctx.drawImage(image, x, y, sprite.width, sprite.height);
       }
-
-      return;
     }
-
-    this.ctx.fillStyle = sprite.color;
-    this.ctx.fillRect(
-      sprite.coordinates.x,
-      sprite.coordinates.y,
-      sprite.width,
-      sprite.height
-    );
 
     // update frame
     this.frame += speed;
+  }
+
+  drawTile(tile: Tile, camera: Coordinates) {
+    const { x, y } = this.getLocationOnCanvas(tile.coordinates, camera);
+    const x2 = x + tile.width;
+    const y2 = y + tile.height;
+    const imageWidth = tile.image.width;
+    const imageHeight = tile.image.height;
+    const aspectRatio = imageWidth / imageHeight;
+    const height = tile.height;
+    const width = height * aspectRatio;
+    // draw image and repeat it to fill the tile that is on canvas
+    // if image is smaller than tile, it will be cropped
+
+    const maxDrawWidth = Math.min(this.canvas.width, x2);
+    const maxDrawHeight = Math.min(this.canvas.height, y2);
+    let x1 = x;
+    while (x1 < maxDrawWidth) {
+      let y1 = y;
+      while (y1 < maxDrawHeight) {
+        this.ctx.drawImage(
+          tile.image,
+          0,
+          0,
+          imageWidth,
+          imageHeight,
+          x1,
+          y1,
+          width,
+          height
+        );
+        y1 += height;
+      }
+      x1 += width;
+    }
   }
 
   drawBackground(
@@ -71,7 +96,7 @@ export class Drawing {
     const canvasHeight = this.canvas.height;
     const canvasWidth = this.canvas.width;
 
-    const parallaxEffect = 0.1;
+    const parallaxEffect = -0.1;
 
     // make background move based on how far away it is from the camera (distance) and the map width
     const x1 = (x * distance * parallaxEffect) % canvasWidth;
@@ -79,7 +104,7 @@ export class Drawing {
     this.ctx.drawImage(background, x1, y, canvasWidth, canvasHeight);
     this.ctx.drawImage(
       background,
-      x1 - canvasWidth,
+      x1 + canvasWidth,
       y,
       canvasWidth,
       canvasHeight
@@ -116,6 +141,7 @@ export class Drawing {
 
   public draw(
     sprites: Sprite[],
+    tiles: Tile[],
     backgrounds: BackgroundType[],
     playerCoordinates: Coordinates
   ) {
@@ -125,5 +151,6 @@ export class Drawing {
       this.drawBackground(element, distance, camera)
     );
     sprites.forEach((sprite) => this.drawSprite(sprite, camera));
+    tiles.forEach((tile) => this.drawTile(tile, camera));
   }
 }
