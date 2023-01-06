@@ -20,9 +20,8 @@ export class Game {
   map: Map;
 
   constructor(canvas: HTMLCanvasElement) {
-    const dimensions = canvas.getBoundingClientRect();
-    this.maxWidth = dimensions.width * 12;
-    this.maxHeight = dimensions.height;
+    this.maxWidth = canvas.width * 12;
+    this.maxHeight = canvas.height;
     this.map = new Map(this.maxWidth, this.maxHeight);
     this.drawing = new Drawing(canvas, this.map.width, this.map.height);
 
@@ -75,7 +74,7 @@ export class Game {
     blockImage.src = blockTile;
 
     // create staircase of blocks
-    for (let i = 0; i < 10; i++) {
+    for (let i = 1; i < 5; i++) {
       const block = new Tile(
         100 + i * 100,
         this.maxHeight - 100 - i * 50,
@@ -226,7 +225,6 @@ export class Game {
         }
         return acc;
       }, [] as { sprite: Tile; surface: SurfaceType }[]);
-
       this.player.updateSurfacesCollided(surfacesCollided);
     }
   }

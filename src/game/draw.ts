@@ -116,17 +116,6 @@ export class Drawing {
     const canvasWidth = this.canvas.width;
     const canvasHeight = this.canvas.height;
 
-    // Camera coordinates are the coordinates of the top left corner of the canvas
-    // so we need to subtract half the canvas width and height to get the coordinates
-    // of the top left corner of the canvas
-    // camera should not go outside the map
-
-    // if player is in the middle of the map, camera should be in the middle of the canvas
-    // if player is at the edge of the map, camera should be at the edge of the canvas
-
-    // if player is at the edge of the map, camera should not go outside the map
-    // if player is in the middle of the map, camera should be in the middle of the canvas
-
     const cameraX = Math.max(
       0,
       Math.min(x - canvasWidth / 2, this.mapWidth - canvasWidth)
