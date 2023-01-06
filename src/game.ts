@@ -29,9 +29,10 @@ export class Game {
   }
 
   public async init() {
-    const idleLoader = new ImageLoader('sprites/player/idle');
-    const runLoader = new ImageLoader('sprites/player/run');
-    const jumpLoader = new ImageLoader('sprites/player/jump');
+    const idleLoader = new ImageLoader('sprites/player/idle/');
+    const runLoader = new ImageLoader('sprites/player/run/');
+    const jumpLoader = new ImageLoader('sprites/player/jump/');
+    const backgroundLoader = new ImageLoader('background/', 'png');
 
     const sprites: { [key in StateType]: HTMLImageElement[] } = {
       idle: await idleLoader.images,
@@ -81,10 +82,17 @@ export class Game {
     platforms.forEach((platform) => {
       this.map.addTile(platform);
     });
+
+    (await backgroundLoader.images).forEach((image, i) => {
+      this.map.addBackground(image, i);
+    });
   }
 
   public start() {
-    this.drawing.draw([...this.map.tiles, ...this.map.sprites]);
+    this.drawing.draw(
+      [...this.map.tiles, ...this.map.sprites],
+      this.map.backgrounds
+    );
     requestAnimationFrame(() => this.update());
   }
 
@@ -171,7 +179,10 @@ export class Game {
     requestAnimationFrame(() => this.update());
     if (this.player) {
       this.move();
-      this.drawing.draw([...this.map.tiles, ...this.map.sprites]);
+      this.drawing.draw(
+        [...this.map.tiles, ...this.map.sprites],
+        this.map.backgrounds
+      );
 
       // check if player is touching a surface
       const surfacesTouched = this.map.tiles.reduce((acc, surface) => {

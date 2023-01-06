@@ -1,3 +1,4 @@
+import { BackgroundType } from './map';
 import { Sprite } from './sprite';
 
 export class Drawing {
@@ -51,8 +52,22 @@ export class Drawing {
     this.frame += this.speed;
   }
 
-  public draw(sprites: Sprite[]) {
+  drawBackground(background: HTMLImageElement, distance: number) {
+    const width = this.canvas.width;
+    const height = this.canvas.height;
+    // make background static
+    const x = 0;
+    const y = 0;
+
+    this.ctx.drawImage(background, x, y, width, height);
+    this.ctx.drawImage(background, x - width, y, width, height);
+  }
+
+  public draw(sprites: Sprite[], backgrounds: BackgroundType[]) {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    backgrounds.forEach(({ element, distance }) =>
+      this.drawBackground(element, distance)
+    );
     sprites.forEach(this.drawSprite.bind(this));
   }
 }
