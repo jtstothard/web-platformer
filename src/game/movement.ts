@@ -93,8 +93,8 @@ export class Movement {
     if (this.velocity.y > this.weight * 10) {
       this.velocity.y = this.weight * 10;
     }
-    if (this.velocity.y < -5) {
-      this.velocity.y = -5;
+    if (this.velocity.y < -this.weight * 10) {
+      this.velocity.y = -this.weight * 10;
     }
     // apply velocity to coordinates if not touching a surface in that direction and deal with collisions
     if (
