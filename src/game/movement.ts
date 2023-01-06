@@ -1,5 +1,5 @@
 import { DirectionType } from './controls';
-import { SurfaceType } from './game';
+import { SurfaceType } from './';
 import { Coordinates, Sprite } from './sprite';
 
 export class Movement {

@@ -1,4 +1,4 @@
-import { DirectionType } from './controls';
+import { DirectionType } from './game/controls';
 import { SurfaceType } from './game';
 import { Movement } from './movement';
 

@@ -13,12 +13,12 @@ export class ImageLoader {
     // explicitly state all extensions for MIME type checking
     if (extension === 'gif') {
       const path = `${prefix}${i}`;
-      const module = (await import(`./assets/${path}.gif`)).default;
+      const module = (await import(`../assets/${path}.gif`)).default;
       return module;
     }
     if (extension === 'png') {
       const path = `${prefix}${i}`;
-      const module = (await import(`./assets/${path}.png`)).default;
+      const module = (await import(`../assets/${path}.png`)).default;
       return module;
     }
   }
