@@ -60,7 +60,6 @@ export class Drawing {
     const y = 0;
 
     this.ctx.drawImage(background, x, y, width, height);
-    this.ctx.drawImage(background, x - width, y, width, height);
   }
 
   public draw(sprites: Sprite[], backgrounds: BackgroundType[]) {
