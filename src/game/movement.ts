@@ -4,12 +4,12 @@ import { Coordinates } from './sprite';
 import { Tile } from './tile';
 
 export class Movement {
-  public coordinates: Coordinates = { x: 0, y: 0 };
-  public previousCoordinates: Coordinates = { x: 0, y: 0 };
+  public coordinates: Coordinates;
+  public previousCoordinates: Coordinates;
   public width: number;
   public height: number;
-  public acceleration: Coordinates = { x: 0, y: 0 };
-  public velocity: Coordinates = { x: 0, y: 0 };
+  public acceleration: Coordinates;
+  public velocity: Coordinates;
   public dex: number;
   public weight: number;
   surfacesCollided: { sprite: Tile; surface: SurfaceType }[] = [];
@@ -28,8 +28,10 @@ export class Movement {
     maxWidth = 0,
     maxHeight = 0
   ) {
-    this.coordinates.x = x;
-    this.coordinates.y = y;
+    this.coordinates = { x, y };
+    this.previousCoordinates = { x, y };
+    this.acceleration = { x: 0, y: 0 };
+    this.velocity = { x: 0, y: 0 };
     this.width = width;
     this.height = height;
     this.dex = dex;
@@ -139,7 +141,6 @@ export class Movement {
     this.surfacesCollided.forEach(({ sprite, surface }) => {
       switch (surface) {
         case 'top':
-          this.previousCoordinates.y = sprite.coordinates.y - this.height;
           this.coordinates.y = sprite.coordinates.y - this.height;
           this.velocity.y = 0;
           this.acceleration.y = 0;

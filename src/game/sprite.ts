@@ -13,12 +13,12 @@ const states = ['idle', 'run', 'jump'] as const;
 export type StateType = typeof states[number];
 
 export class Sprite {
-  public coordinates: Coordinates = { x: 0, y: 0 };
-  public previousCoordinates: Coordinates = { x: 0, y: 0 };
+  public coordinates: Coordinates;
+  public previousCoordinates: Coordinates;
   public width: number;
   public height: number;
-  public acceleration: Coordinates = { x: 0, y: 0 };
-  public velocity: Coordinates = { x: 0, y: 0 };
+  public acceleration: Coordinates;
+  public velocity: Coordinates;
   public state: StateType = 'idle';
   public direction: 'left' | 'right' = 'right';
   public sprites?: { [key in StateType]: HTMLImageElement[] };
@@ -118,5 +118,9 @@ export class Sprite {
 
   public move() {
     this.movement.move();
+    this.coordinates = this.movement.coordinates;
+    this.previousCoordinates = this.movement.previousCoordinates;
+    this.velocity = this.movement.velocity;
+    this.acceleration = this.movement.acceleration;
   }
 }

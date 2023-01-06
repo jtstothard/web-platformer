@@ -48,7 +48,7 @@ export class Game {
 
     this.player = new Sprite(
       this.drawing.canvas.width / 2,
-      this.maxHeight / 2,
+      this.maxHeight / 2 - height / 2,
       width,
       height,
       0.5,
@@ -165,7 +165,7 @@ export class Game {
         timeToCollisionList.push({ surface: 'left', time: timeToCollision });
       } else if (sprite.velocity.x <= 0) {
         // player is moving left
-        const timeToCollision = (a2Left - bRight) / sprite.velocity.x || 0;
+        const timeToCollision = (bRight - a2Left) / sprite.velocity.x || 0;
         timeToCollisionList.push({ surface: 'right', time: timeToCollision });
       }
 
@@ -175,7 +175,7 @@ export class Game {
         timeToCollisionList.push({ surface: 'top', time: timeToCollision });
       } else if (sprite.velocity.y <= 0) {
         // player is moving up
-        const timeToCollision = (a2Top - bBottom) / sprite.velocity.y || 0;
+        const timeToCollision = (bBottom - a2Top) / sprite.velocity.y || 0;
         timeToCollisionList.push({ surface: 'bottom', time: timeToCollision });
       }
 
@@ -183,7 +183,6 @@ export class Game {
       const res = timeToCollisionList
         .filter((t) => t.time >= 0 && t.time < Infinity)
         .sort((a, b) => a.time - b.time)[0];
-
       return res?.surface || null;
     }
     return null;
@@ -202,12 +201,12 @@ export class Game {
 
       // check if player is touching a surface
       const surfacesTouched = this.map.tiles.reduce((acc, surface) => {
-        const colliding = this.whichSurfaceTouchingWith(
+        const touching = this.whichSurfaceTouchingWith(
           this.player as Sprite,
           surface
         );
-        if (colliding) {
-          acc.push({ sprite: surface, surface: colliding });
+        if (touching) {
+          acc.push({ sprite: surface, surface: touching });
         }
         return acc;
       }, [] as { sprite: Tile; surface: SurfaceType }[]);
