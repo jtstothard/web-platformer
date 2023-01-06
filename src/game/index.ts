@@ -51,7 +51,6 @@ export class Game {
       this.maxHeight / 2,
       width,
       height,
-      'red',
       0.5,
       1,
       sprites,

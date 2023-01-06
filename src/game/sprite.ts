@@ -17,7 +17,6 @@ export class Sprite {
   public previousCoordinates: Coordinates = { x: 0, y: 0 };
   public width: number;
   public height: number;
-  public color: string;
   public acceleration: Coordinates = { x: 0, y: 0 };
   public velocity: Coordinates = { x: 0, y: 0 };
   public state: StateType = 'idle';
@@ -34,7 +33,6 @@ export class Sprite {
     y: number,
     width: number,
     height: number,
-    color: string,
     dex = 0,
     weight = 0,
     sprites?: { [key in StateType]: HTMLImageElement[] },
@@ -43,7 +41,6 @@ export class Sprite {
   ) {
     this.maxWidth = maxWidth;
     this.maxHeight = maxHeight;
-    this.color = color;
     this.movement = new Movement(
       x,
       y,
