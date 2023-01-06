@@ -13,10 +13,10 @@ export class Controls {
 
   constructor(update: (direction: DirectionType) => void) {
     this.keyMap = {
-      up: 'ArrowUp',
-      left: 'ArrowLeft',
-      right: 'ArrowRight',
-      down: 'ArrowDown',
+      up: 'w',
+      left: 'a',
+      right: 's',
+      down: 'r',
       space: ' ',
       shift: 'Shift',
       enter: 'Enter',
