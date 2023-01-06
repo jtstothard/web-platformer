@@ -20,10 +20,10 @@ export class Game {
 
   constructor(canvas: HTMLCanvasElement) {
     const dimensions = canvas.getBoundingClientRect();
-    this.maxWidth = dimensions.width;
+    this.maxWidth = dimensions.width * 12;
     this.maxHeight = dimensions.height;
-    this.drawing = new Drawing(canvas);
     this.map = new Map(this.maxWidth, this.maxHeight);
+    this.drawing = new Drawing(canvas, this.map.width, this.map.height);
 
     this.init();
   }
@@ -40,7 +40,7 @@ export class Game {
       jump: await jumpLoader.images,
     };
 
-    const height = 50;
+    const height = 100;
     const spritesWidth = sprites.idle[0].width;
     const spritesHeight = sprites.idle[0].height;
     const aspectRatio = (spritesWidth || 1) / (spritesHeight || 1);
@@ -89,10 +89,12 @@ export class Game {
   }
 
   public start() {
-    this.drawing.draw(
-      [...this.map.tiles, ...this.map.sprites],
-      this.map.backgrounds
-    );
+    if (this.player)
+      this.drawing.draw(
+        [...this.map.tiles, ...this.map.sprites],
+        this.map.backgrounds,
+        this.player.coordinates
+      );
     requestAnimationFrame(() => this.update());
   }
 
@@ -181,7 +183,8 @@ export class Game {
       this.move();
       this.drawing.draw(
         [...this.map.tiles, ...this.map.sprites],
-        this.map.backgrounds
+        this.map.backgrounds,
+        this.player.coordinates
       );
 
       // check if player is touching a surface
