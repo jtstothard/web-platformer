@@ -26,6 +26,7 @@ export class Drawing {
   drawSprite(sprite: Sprite, camera: Coordinates) {
     const { x, y } = this.getLocationOnCanvas(sprite.coordinates, camera);
     const speed = 0.2;
+    if (sprite.state !== sprite.previousState) this.frame = 0;
     if (sprite.sprites) {
       const frames = sprite.sprites[sprite.state];
       const frame = Math.floor(this.frame) % frames.length;
@@ -46,10 +47,13 @@ export class Drawing {
       } else {
         this.ctx.drawImage(image, x, y, sprite.width, sprite.height);
       }
+      // update frame
+      if (sprite.state === 'jump') {
+        this.frame = Math.min(this.frame + speed, frames.length - 1);
+      } else {
+        this.frame += speed;
+      }
     }
-
-    // update frame
-    this.frame += speed;
   }
 
   drawTile(tile: Tile, camera: Coordinates) {

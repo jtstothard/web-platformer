@@ -20,6 +20,7 @@ export class Sprite {
   public acceleration: Coordinates;
   public velocity: Coordinates;
   public state: StateType = 'idle';
+  public previousState: StateType = 'idle';
   public direction: 'left' | 'right' = 'right';
   public sprites?: { [key in StateType]: HTMLImageElement[] };
   surfacesCollided: { sprite: Tile; surface: SurfaceType }[] = [];
@@ -66,6 +67,7 @@ export class Sprite {
   }
 
   resetState(surfaces: { sprite: Tile; surface: SurfaceType }[]) {
+    this.previousState = this.state;
     const isTouchingFloor = this.movement.isTouchingFloor;
 
     const willBeTouchingFloor = surfaces.some(
@@ -99,6 +101,7 @@ export class Sprite {
   }
 
   public update(direction: DirectionType) {
+    this.previousState = this.state;
     this.movement.update(direction);
     if (direction === 'left') {
       this.state = 'run';
