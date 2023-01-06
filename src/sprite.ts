@@ -7,6 +7,10 @@ export type Coordinates = {
   y: number;
 };
 
+const states = ['idle', 'run', 'jump'] as const;
+
+export type StateType = typeof states[number];
+
 export class Sprite {
   public coordinates: Coordinates = { x: 0, y: 0 };
   public previousCoordinates: Coordinates = { x: 0, y: 0 };
@@ -15,6 +19,9 @@ export class Sprite {
   public color: string;
   public acceleration: Coordinates = { x: 0, y: 0 };
   public velocity: Coordinates = { x: 0, y: 0 };
+  public state: StateType = 'idle';
+  public direction: 'left' | 'right' = 'right';
+  public sprites?: { [key in StateType]: HTMLImageElement[] };
   surfacesCollided: { sprite: Sprite; surface: SurfaceType }[] = [];
   surfacesTouched: { sprite: Sprite; surface: SurfaceType }[] = [];
   movement: Movement;
@@ -26,7 +33,8 @@ export class Sprite {
     height: number,
     color: string,
     dex = 0,
-    weight = 0
+    weight = 0,
+    sprites?: { [key in StateType]: HTMLImageElement[] }
   ) {
     this.color = color;
     this.movement = new Movement(x, y, width, height, dex, weight);
@@ -39,6 +47,9 @@ export class Sprite {
     this.velocity = this.movement.velocity;
     this.surfacesCollided = this.movement.surfacesCollided;
     this.surfacesTouched = this.movement.surfacesTouched;
+    if (sprites) {
+      this.sprites = sprites;
+    }
   }
 
   public updateSurfacesCollided(
@@ -55,6 +66,20 @@ export class Sprite {
 
   public update(direction: DirectionType) {
     this.movement.update(direction);
+    if (direction === 'left') {
+      this.state = 'run';
+      this.direction = 'left';
+    }
+    if (direction === 'right') {
+      this.state = 'run';
+      this.direction = 'right';
+    }
+    if (direction === 'up') {
+      this.state = 'jump';
+    }
+    if (direction === 'stop') {
+      this.state = 'idle';
+    }
   }
 
   public move() {

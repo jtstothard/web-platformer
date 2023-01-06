@@ -1,46 +1,79 @@
 export const surfaceValues = ['top', 'bottom', 'left', 'right'] as const;
 export type SurfaceType = typeof surfaceValues[number];
 
+// @ts-ignore
+import { GIF } from './utils/gif';
+
 import { Controls } from './controls';
 import { Drawing } from './draw';
-import { Sprite } from './sprite';
+import { Sprite, StateType } from './sprite';
 import { Map } from './map';
 
+import { ImageLoader } from './ImageLoader';
+
 export class Game {
-  private player: Sprite;
+  private player?: Sprite;
+  private maxWidth: number;
+  private maxHeight: number;
   drawing: Drawing;
   map: Map;
 
   constructor(canvas: HTMLCanvasElement) {
     const dimensions = canvas.getBoundingClientRect();
-    const maxWidth = dimensions.width;
-    const maxHeight = dimensions.height;
-    // create player sprite in the middle of the screen
+    this.maxWidth = dimensions.width;
+    this.maxHeight = dimensions.height;
+    this.drawing = new Drawing(canvas);
+    this.map = new Map(this.maxWidth, this.maxHeight);
+
+    this.init();
+  }
+
+  public async init() {
+    const idleLoader = new ImageLoader('sprites/player/idle');
+    const runLoader = new ImageLoader('sprites/player/run');
+    const jumpLoader = new ImageLoader('sprites/player/jump');
+
+    const sprites: { [key in StateType]: HTMLImageElement[] } = {
+      idle: await idleLoader.images,
+      run: await runLoader.images,
+      jump: await jumpLoader.images,
+    };
+
+    const height = 50;
+    const spritesWidth = sprites.idle[0].width;
+    const spritesHeight = sprites.idle[0].height;
+    const aspectRatio = (spritesWidth || 1) / (spritesHeight || 1);
+    const width = height * aspectRatio;
+
     this.player = new Sprite(
-      maxWidth / 2,
-      maxHeight / 2,
-      50,
-      50,
+      this.maxWidth / 2,
+      this.maxHeight / 2,
+      width,
+      height,
       'red',
       0.5,
-      1
+      1,
+      sprites
     );
 
     // create ground sprite
-    const ground = new Sprite(0, maxHeight - 50, maxWidth, 50, 'green');
+    const ground = new Sprite(
+      0,
+      this.maxHeight - 50,
+      this.maxWidth,
+      50,
+      'green'
+    );
 
     // create platform stairs sprite
     const platforms = [];
     for (let i = 0; i < 10; i++) {
       platforms.push(
-        new Sprite(100 + i * 50, maxHeight - 100 - i * 50, 50, 50, 'blue')
+        new Sprite(100 + i * 50, this.maxHeight - 100 - i * 50, 50, 50, 'blue')
       );
     }
 
     new Controls(this.player.update.bind(this.player));
-
-    this.drawing = new Drawing(canvas);
-    this.map = new Map(maxWidth, maxHeight);
 
     this.map.addTile(ground);
     this.map.addSprite(this.player);
@@ -57,7 +90,7 @@ export class Game {
 
   // add continuous movement
   public move() {
-    this.player.move();
+    this.player?.move();
   }
 
   // find the surface that the player is touching
@@ -136,29 +169,37 @@ export class Game {
 
   public update() {
     requestAnimationFrame(() => this.update());
-    this.move();
-    this.drawing.draw([...this.map.tiles, ...this.map.sprites]);
+    if (this.player) {
+      this.move();
+      this.drawing.draw([...this.map.tiles, ...this.map.sprites]);
 
-    // check if player is touching a surface
-    const surfacesTouched = this.map.tiles.reduce((acc, surface) => {
-      const colliding = this.whichSurfaceTouchingWith(this.player, surface);
-      if (colliding) {
-        acc.push({ sprite: surface, surface: colliding });
-      }
-      return acc;
-    }, [] as { sprite: Sprite; surface: SurfaceType }[]);
+      // check if player is touching a surface
+      const surfacesTouched = this.map.tiles.reduce((acc, surface) => {
+        const colliding = this.whichSurfaceTouchingWith(
+          this.player as Sprite,
+          surface
+        );
+        if (colliding) {
+          acc.push({ sprite: surface, surface: colliding });
+        }
+        return acc;
+      }, [] as { sprite: Sprite; surface: SurfaceType }[]);
 
-    this.player.updateSurfacesTouched(surfacesTouched);
+      this.player.updateSurfacesTouched(surfacesTouched);
 
-    // check if player is colliding with a surface
-    const surfacesCollided = this.map.tiles.reduce((acc, surface) => {
-      const colliding = this.whichSurfaceCollidingWith(this.player, surface);
-      if (colliding) {
-        acc.push({ sprite: surface, surface: colliding });
-      }
-      return acc;
-    }, [] as { sprite: Sprite; surface: SurfaceType }[]);
+      // check if player is colliding with a surface
+      const surfacesCollided = this.map.tiles.reduce((acc, surface) => {
+        const colliding = this.whichSurfaceCollidingWith(
+          this.player as Sprite,
+          surface
+        );
+        if (colliding) {
+          acc.push({ sprite: surface, surface: colliding });
+        }
+        return acc;
+      }, [] as { sprite: Sprite; surface: SurfaceType }[]);
 
-    this.player.updateSurfacesCollided(surfacesCollided);
+      this.player.updateSurfacesCollided(surfacesCollided);
+    }
   }
 }
