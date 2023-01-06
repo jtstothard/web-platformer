@@ -115,7 +115,7 @@ export class Movement {
       this.coordinates.y += this.velocity.y;
     }
     // calculate friction and air resistance
-    const friction = 0.7;
+    const friction = 0.9;
     const airResistance = 0.99;
     if (this.isTouchingFloor) {
       this.velocity.x *= friction;
