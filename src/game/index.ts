@@ -10,6 +10,7 @@ import { ImageLoader } from './ImageLoader';
 import { Tile } from './tile';
 
 import groundTile from '../assets/tiles/ground.png';
+import blockTile from '../assets/tiles/block.png';
 
 export class Game {
   private player?: Sprite;
@@ -69,6 +70,21 @@ export class Game {
       50,
       groundImage
     );
+
+    const blockImage = new Image();
+    blockImage.src = blockTile;
+
+    // create staircase of blocks
+    for (let i = 0; i < 10; i++) {
+      const block = new Tile(
+        100 + i * 100,
+        this.maxHeight - 100 - i * 50,
+        100,
+        50,
+        blockImage
+      );
+      this.map.addTile(block);
+    }
 
     new Controls(this.player.update.bind(this.player));
 
